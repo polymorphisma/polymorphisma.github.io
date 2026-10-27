@@ -1,0 +1,95 @@
+---
+import Base from '../../layouts/Base.astro';
+import '../../styles/global.css';
+
+const posts = [
+  {
+    title: 'TCP Load Testing with JMeter: A General Approach Using PostgreSQL in Docker',
+    url: 'https://adex.ltd/tcp-load-testing-with-jmeter-using-postgresql-in-docker',
+    excerpt: "Users' expectations are growing more than ever, so your applications must always be readily available to handle loads of requests.",
+    image: '/image/tcp_jmeter.jpg',
+    tags: ['TCP', 'JMeter', 'PostgreSQL', 'Load Testing'],
+  },
+  {
+    title: 'Integrating OpenTelemetry with FastAPI in Python For Observability',
+    url: 'https://adex.ltd/integrating-opentelemetry-with-fastapi-in-python',
+    excerpt: 'Monitoring and analyzing your apps performance is critical for ensuring dependability in production scenarios.',
+    image: '/image/open_telemetry.jpg',
+    tags: ['OpenTelemetry', 'Python', 'FastAPI', 'Monitoring'],
+  },
+  {
+    title: 'Mastering Load Testing with Artillery.io: A Comprehensive Guide',
+    url: 'https://adex.ltd/mastering-load-testing-with-artillery-io-a-comprehensive-guide',
+    excerpt: "In today's fast-paced digital landscape, web applications and APIs must scale seamlessly as traffic grows.",
+    image: '/image/load_testing.jpg',
+    tags: ['Artillery', 'Load Testing', 'YAML'],
+  },
+  {
+    title: 'Database Migrations with Alembic and FastAPI: A Comprehensive Guide Using Poetry',
+    url: 'https://adex.ltd/database-migrations-with-alembic-and-fastapi-a-comprehensive-guide-using-poetry',
+    excerpt: "In web development, it's essential to maintain a growing and consistent database schema.",
+    image: '/image/alembic.jpg',
+    tags: ['Python', 'FastAPI', 'Alembic', 'Database'],
+  },
+  {
+    title: 'Automating Data Scraping from Google Maps with Selenium',
+    url: 'https://medium.com/@shrawansunar.6/automating-data-scraping-from-google-maps-with-selenium-56449dd5f838',
+    excerpt: 'Web scraping is a powerful technique used to extract information from websites.',
+    image: '/image/data_scraping.png',
+    tags: ['Web Scraping', 'Python', 'Selenium'],
+  },
+];
+---
+
+<Base title="Blog — Shrawan Sunar" description="Articles by Shrawan Sunar on software engineering, DevOps, and Python.">
+  <nav class="fixed top-0 left-0 right-0 z-50 border-b border-border bg-bg/80 backdrop-blur-sm">
+    <div class="max-w-3xl mx-auto px-6 h-12 flex items-center justify-between">
+      <span class="font-mono text-sm text-muted">~/blog</span>
+      <div class="flex gap-5 text-sm text-muted">
+        <a href="/" class="hover:text-text transition-colors">home</a>
+        <a href="/cli" class="hover:text-text transition-colors">cli</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="max-w-3xl mx-auto px-6 pt-28 pb-24">
+    <h1 class="text-xs font-mono uppercase tracking-widest text-muted mb-8">Writing</h1>
+
+    <div class="space-y-4">
+      {posts.map((post) => (
+        <a
+          href={post.url}
+          target="_blank"
+          rel="noopener"
+          class="group flex gap-4 bg-surface border border-border rounded-lg p-4 hover:border-accent/50 transition-all duration-200"
+        >
+          <img
+            src={post.image}
+            alt={post.title}
+            class="w-16 h-16 rounded object-cover shrink-0 opacity-80 group-hover:opacity-100 transition-opacity"
+          />
+          <div class="min-w-0">
+            <h2 class="font-medium text-text leading-snug group-hover:text-accent transition-colors">
+              {post.title}
+            </h2>
+            <p class="text-sm text-muted mt-1 leading-relaxed line-clamp-2">{post.excerpt}</p>
+            <div class="flex flex-wrap gap-1.5 mt-2">
+              {post.tags.map((tag) => (
+                <span class="text-xs px-2 py-0.5 bg-bg border border-border rounded text-muted font-mono">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </div>
+        </a>
+      ))}
+    </div>
+  </main>
+
+  <footer class="border-t border-border">
+    <div class="max-w-3xl mx-auto px-6 h-12 flex items-center justify-between text-xs text-muted font-mono">
+      <a href="/" class="hover:text-text transition-colors">← home</a>
+      <a href="/cli" class="hover:text-text transition-colors">cli</a>
+    </div>
+  </footer>
+</Base>

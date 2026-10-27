@@ -1,0 +1,399 @@
+---
+import Base from '../../layouts/Base.astro';
+import '../../styles/global.css';
+---
+
+<Base title="ShellFolio — Shrawan Sunar" description="Terminal-style portfolio for Shrawan Sunar">
+  <style>
+    body { background: #000; }
+
+    .container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      width: 100vw;
+      font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+      font-size: 14px;
+    }
+
+    #terminal {
+      border: 2px solid #111;
+      border-radius: 10px;
+      height: 100%;
+      width: 100%;
+      box-shadow: 0 0 10px 7px rgba(255,255,255,.08);
+      padding: 1rem;
+      border-top: 2.4rem solid #111;
+      overflow-y: auto;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    #terminal::-webkit-scrollbar { display: none; }
+
+    .controls {
+      position: absolute;
+      margin-top: -53px;
+      margin-left: -15px;
+    }
+    .controls ul {
+      display: inline-flex;
+      list-style: none;
+      gap: .55em;
+      margin: 5px 0 0 -25px;
+      padding: 0;
+    }
+    .controls ul li { cursor: pointer; }
+    .controls ul li:nth-child(1) { color: #74e907; }
+    .controls ul li:nth-child(2) { color: #eea406; }
+    .controls ul li:nth-child(1):hover { color: #eea406; }
+    .controls ul li:nth-child(2):hover { color: #b9033a; }
+
+    .message {
+      color: #db7638;
+      font-size: 14px;
+      font-weight: 200;
+      margin-left: 10px;
+      padding: 2px;
+      letter-spacing: .12em;
+      line-height: 1.4em;
+    }
+
+    .shell {
+      color: #db7638;
+      font-size: 14px;
+      font-weight: 200;
+      padding: 2px 2px 2px 0;
+      letter-spacing: .12em;
+      line-height: 1.3rem;
+      margin-bottom: 3px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .prompt-label { color: #fec303; white-space: nowrap; }
+    .prompt-ok { color: #64f105; }
+    .prompt-err { color: #f5084f; }
+
+    .command {
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #149bda;
+      font-family: inherit;
+      font-size: 14px;
+      letter-spacing: .12em;
+      flex: 1;
+      caret-color: #f5084f;
+    }
+
+    .dynamic-content {
+      color: #fce26e;
+      font-size: 14px;
+      font-weight: 200;
+      letter-spacing: .12em;
+      margin-left: 10px;
+    }
+
+    .dynamic-content a { color: cyan; text-decoration: none; }
+    .dynamic-content a:hover { text-decoration: underline; }
+    .dynamic-content ul { margin: 4px 0 4px -10px; }
+    .dynamic-content ul li { list-style: none; margin: 2px 0; }
+    .dynamic-content p { margin: 4px 0; line-height: 1.4em; }
+
+    .uuid { color: #fce26e; }
+    #helper { color: aquamarine; font-weight: 300; }
+    #case-sense { color: #fce26e; font-weight: 300; }
+
+    .footer {
+      color: #fec303;
+      text-align: center;
+      position: fixed;
+      bottom: 0;
+      right: 25px;
+      font-size: 12px;
+      font-weight: 200;
+      letter-spacing: .1em;
+    }
+    .footer a { color: aqua; text-decoration: none; }
+
+    .maximize-box {
+      position: fixed;
+      bottom: 30px;
+      left: 30px;
+      color: #f56201;
+      cursor: pointer;
+      display: none;
+    }
+    .maximize-box:hover { color: #fa9b0d; }
+
+    .flip { display: none !important; }
+
+    .problem { text-align: left; padding: 0 30px; }
+    .problem h3 { font-weight: 300; font-size: 14px; text-transform: uppercase; color: #f56201; }
+    .problem p { font-weight: 100; font-size: 12px; color: cyan; margin-bottom: 5px; }
+    .problem p span { font-style: italic; color: #f5084f; }
+    .problem .code-block { border: 1px solid #7508db; border-radius: 7px; padding: 15px 25px; }
+    .problem code { font-weight: 100; font-size: 11px; color: #fce283; text-decoration: underline; text-decoration-color: #f5084f; }
+  </style>
+
+  <div class="container">
+    <div id="terminal">
+      <div class="controls">
+        <ul>
+          <li id="btn-hide">&#8854;</li>
+          <li id="btn-quit">&#8855;</li>
+        </ul>
+      </div>
+      <div class="message" id="welcome-msg">
+        <p>
+          Welcome to ShellFolio v1992.05 !<br />
+          Session UUID: <span class="uuid" id="session-id"></span><br />
+          Type <span id="helper">"help"</span> to see available commands.<br />
+          <span id="case-sense">All commands are case insensitive.</span>
+        </p>
+      </div>
+      <div id="insert" class="dynamic-content"></div>
+    </div>
+  </div>
+
+  <div class="maximize-box" id="maximize-box">
+    <p>&#9654; <span>restore terminal</span></p>
+  </div>
+
+  <div class="footer">
+    <p>Coded with <span style="color:#f5084f">&#9829;</span> by
+      <a href="https://github.com/polymorphisma" target="_blank">@polymorphisma</a>
+    </p>
+  </div>
+
+  <script>
+    // ── Helpers ─────────────────────────────────────────────────────────────
+    function genUUID(): string {
+      return '2xxx-x0xx-xx0x-xxx9-x5xx-1xx9'.replace(/[xy]/g, (c) => {
+        const r = (Math.random() * 16) | 0;
+        const v = c === 'x' ? r : (r & 0x3) | 0x8;
+        return v.toString(16);
+      });
+    }
+
+    function isBlank(s: string): boolean {
+      return s.trim() === '';
+    }
+
+    // ── DOM refs ─────────────────────────────────────────────────────────────
+    const terminal   = document.getElementById('terminal')!;
+    const insert     = document.getElementById('insert')!;
+    const welcomeMsg = document.getElementById('welcome-msg')!;
+    const sessionEl  = document.getElementById('session-id')!;
+    const btnHide    = document.getElementById('btn-hide')!;
+    const btnQuit    = document.getElementById('btn-quit')!;
+    const maximizeBox = document.getElementById('maximize-box')!;
+
+    // ── Init ─────────────────────────────────────────────────────────────────
+    sessionEl.textContent = genUUID();
+    addShell(true);
+
+    // ── Shell prompt ─────────────────────────────────────────────────────────
+    function addShell(ok = true) {
+      const row = document.createElement('div');
+      row.className = 'shell';
+      row.innerHTML = `
+        <span class="prompt-label">
+          <span class="${ok ? 'prompt-ok' : 'prompt-err'}">${ok ? '✓' : '✗'}</span>
+          root@polymorphisma $&nbsp;
+        </span>
+        <input class="command" type="text" autocomplete="off" spellcheck="false" />
+      `;
+      insert.appendChild(row);
+      focusLast();
+    }
+
+    function focusLast() {
+      const inputs = insert.querySelectorAll<HTMLInputElement>('.command');
+      inputs[inputs.length - 1]?.focus();
+    }
+
+    // ── Output helper ─────────────────────────────────────────────────────────
+    function out(html: string) {
+      const el = document.createElement('div');
+      el.innerHTML = html;
+      insert.appendChild(el);
+    }
+
+    // ── Commands ──────────────────────────────────────────────────────────────
+    const COMMANDS: Record<string, () => void> = {
+      help() {
+        out(`<p><span style="color:#09c509">⇒</span> Available commands — type <span style="color:aquamarine">cls</span> to clear, <span style="color:aquamarine">exit</span> to close.</p>
+             <ul style="color:#64f105;margin-left:-5px">
+               <li>≫ about</li><li>≫ skills</li><li>≫ contact</li>
+               <li>≫ ls / dir</li>
+               <li>≫ facebook | fb</li><li>≫ linkedin | lnkd</li>
+               <li>≫ instagram | insta</li><li>≫ github | gh</li>
+               <li>≫ upwork</li>
+               <li>≫ cls | clear</li><li>≫ exit</li>
+             </ul>
+             <p style="color:#af0437">⊗ Please don't try <span style="color:#cf0240">sudo rm -rf</span> — you've been warned.</p>`);
+      },
+
+      ls() {
+        out(`<ul style="color:#64f105;margin-left:-5px">
+               <li>about.txt</li><li>skills.txt</li><li>contact.txt</li>
+             </ul>`);
+      },
+
+      about() {
+        out(`<p style="color:#fce283;line-height:1.5em">
+               Hello,<br>
+               I'm <span style="color:aquamarine">Shrawan Sunar</span>
+               <span style="color:#f5084f"> aka polymorphisma</span> — a code freak, music lover,
+               traveller &amp; passionate learner.<br>
+               <span style="color:#6ef500;font-style:oblique">'I'm on a mission to make everything perfect.'</span>
+             </p>`);
+      },
+
+      skills() {
+        out(`<p>I can assist you with</p>
+             <ul style="margin-left:-5px">
+               <li><span style="color:#f5084f">★ Language:</span> Python, C, JSON, JS/TS</li>
+               <li><span style="color:#f5084f">★ Frameworks:</span> FastAPI, Flask, Django, Pandas, NumPy</li>
+               <li><span style="color:#f5084f">★ Database:</span> PostgreSQL, MySQL, Redis</li>
+               <li><span style="color:#f5084f">★ Web:</span> HTML, CSS, Tailwind, Bootstrap</li>
+               <li><span style="color:#f5084f">★ Tools:</span> Nginx, Linux, Git, Docker, Postman</li>
+               <li><span style="color:#f5084f">★ Specializations:</span> Backend, REST API, Web Scraping</li>
+               <li><span style="color:#f5084f">★ Methodologies:</span> Agile / Scrum</li>
+             </ul>
+             <p style="color:#64f105"><span style="color:#fec304">⇒</span> Available for freelance, remote or contract opportunities.</p>`);
+      },
+
+      contact() {
+        out(`<p style="line-height:1.5em">
+               Drop a message via <a href="mailto:shrawansunar.6@gmail.com">shrawansunar.6@gmail.com</a>.<br>
+               Clickable links below:
+             </p>
+             <ul style="margin-left:-5px">
+               <li><span style="color:#09c509">⇒</span> <a href="https://www.linkedin.com/in/shrawansunar/" target="_blank">LinkedIn</a></li>
+               <li><span style="color:#09c509">⇒</span> <a href="https://www.github.com/polymorphisma" target="_blank">GitHub</a></li>
+               <li><span style="color:#09c509">⇒</span> <a href="https://www.upwork.com/freelancers/~01ab0d3fae718ca143" target="_blank">Upwork</a></li>
+               <li><span style="color:#09c509">⇒</span> <a href="https://www.facebook.com/shrawan.sunar.6/" target="_blank">Facebook</a></li>
+               <li><span style="color:#09c509">⇒</span> <a href="https://www.instagram.com/shrawansunar.6/" target="_blank">Instagram</a></li>
+             </ul>
+             <p style="color:aqua">You can also type the social media name as a command!</p>`);
+      },
+
+      facebook()   { window.open('https://www.facebook.com/shrawan.sunar.6', '_blank'); },
+      linkedin()   { window.open('https://www.linkedin.com/in/shrawansunar/', '_blank'); },
+      instagram()  { window.open('https://www.instagram.com/shrawansunar.6/', '_blank'); },
+      upwork()     { window.open('https://www.upwork.com/freelancers/~01ab0d3fae718ca143', '_blank'); },
+      github()     { window.open('https://www.github.com/polymorphisma', '_blank'); },
+      home()       { window.location.href = '/'; },
+      blog()       { window.location.href = '/blog'; },
+
+      clear() {
+        insert.innerHTML = '';
+        welcomeMsg.style.display = 'none';
+      },
+
+      exit() {
+        terminal.classList.add('flip');
+        maximizeBox.style.display = 'block';
+      },
+
+      'sudo rm -rf'() {
+        insert.innerHTML = '';
+        welcomeMsg.style.display = 'none';
+        const el = document.createElement('div');
+        el.className = 'problem';
+        el.innerHTML = `
+          <h3>watch_dog_violation &#9785;</h3>
+          <p>We just ran into a problem.<br>
+             <span>Error Code: 0xEA1LPR1Z6ES009</span><br>
+             You did something you were not meant to. Long maintenance ahead.
+          </p>
+          <div class="code-block">
+            <code>
+              global _start<br>section .text<br>_start:<br>
+              &nbsp;&nbsp;mov rax, 1 ; write(<br>
+              &nbsp;&nbsp;mov rdi, 1 ; STDOUT_FILENO<br>
+              &nbsp;&nbsp;mov rsi, msg<br>
+              &nbsp;&nbsp;mov rdx, msglen<br>
+              &nbsp;&nbsp;mov rax, 60<br>
+              &nbsp;&nbsp;mov rdi, 0<br>
+              &nbsp;&nbsp;syscall<br>
+              EXIT_STATUS, -092716653543x7
+            </code>
+          </div>`;
+        insert.appendChild(el);
+      },
+    };
+
+    // aliases
+    COMMANDS['fb']       = COMMANDS['facebook'];
+    COMMANDS['lnkd']     = COMMANDS['linkedin'];
+    COMMANDS['insta']    = COMMANDS['instagram'];
+    COMMANDS['gh']       = COMMANDS['github'];
+    COMMANDS['cls']      = COMMANDS['clear'];
+    COMMANDS['dir']      = COMMANDS['ls'];
+    COMMANDS['cd about']   = COMMANDS['about'];
+    COMMANDS['cd skills']  = COMMANDS['skills'];
+    COMMANDS['cd contact'] = COMMANDS['contact'];
+
+    // ── Input handler ─────────────────────────────────────────────────────────
+    insert.addEventListener('keydown', (e) => {
+      const target = e.target as HTMLInputElement;
+      if (target.className !== 'command') return;
+      if (e.key !== 'Enter') return;
+
+      e.preventDefault();
+      target.disabled = true;
+      const val = target.value.trim().toLowerCase();
+
+      if (isBlank(val)) {
+        addShell(true);
+        return;
+      }
+
+      if (val === 'reload') { window.location.reload(); return; }
+
+      const cmd = COMMANDS[val];
+      if (cmd) {
+        cmd();
+        if (val !== 'exit') addShell(true);
+      } else {
+        out(`<p>
+               <span style="color:#e70347">Error: InvalidCommandException</span><br>
+               <span style="color:#fce283">The term <span style="color:#f5084f">'${val}'</span> is not recognized.</span><br>
+               <span style="color:#fce26e">Type <span style="color:aquamarine">"help"</span> for available commands.</span>
+             </p>`);
+        addShell(false);
+      }
+
+      // auto-scroll
+      terminal.scrollTop = terminal.scrollHeight;
+    });
+
+    // focus last input on click anywhere
+    document.addEventListener('click', (e) => {
+      if ((e.target as HTMLElement).className !== 'command') focusLast();
+    });
+
+    // ── Controls ──────────────────────────────────────────────────────────────
+    btnQuit.addEventListener('click', () => {
+      terminal.classList.add('flip');
+      maximizeBox.style.display = 'block';
+    });
+
+    btnHide.addEventListener('click', () => {
+      terminal.classList.add('flip');
+      maximizeBox.style.display = 'block';
+    });
+
+    maximizeBox.addEventListener('click', () => {
+      terminal.classList.remove('flip');
+      maximizeBox.style.display = 'none';
+      focusLast();
+    });
+  </script>
+</Base>
